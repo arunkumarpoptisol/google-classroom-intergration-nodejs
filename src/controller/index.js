@@ -12,56 +12,28 @@ async function GetRefreshToken(token) {
   return refreshToken;
 }
 
-async function CreateEvent(data, refreskToken) {
-  // adding event to google
-  await oAuth2Client.setCredentials({ refresh_token: refresh_token });
-  const calendar = google.calendar("v3");
-  const res = await calendar.events.insert({
-    auth: OAuth2Client,
-    calendarId: "primary",
-    requestBody: {
-      attendees: data.attendees, // email that you want to add as guest summary: data.title, // title of the event
-      description: data.description, // description of event
-      guestsCanModify: true,
-      color: "6", // you can check the docs for different colors
-      start: {
-        dateTime: new Date(data.startDate), // event start date
-      },
-      end: {
-        dateTime: new Date(data.endDate), // event end date
-      },
-    },
+async function ListAll(data, refresh_token) {
+  let result = {};
+  result.classroooms = await classroom.courses.list({
+    auth: oAuth2Client,
   });
-  return res;
-}
-
-async function UpdateEvent(data, refreskToken) {
-  // adding event to google
-  await OAuth2Client.setCredentials({ refresh_token: refresh_token });
-  const calendar = google.calendar("v3");
-  const res = await calendar.events.update({
-    auth: OAuth2Client,
-    calendarId: "primary",
-    eventId: data.id, // this is the id we saved while creating event requestBody: {
-    attendees: data.attendees, // email that you want to add as guest summary: data.title, // title of the event
-    description: data.description, // description of event guestsCanModify: true,
-    color: "6", // you can check the docs for different colors
-    start: {
-      dateTime: new Date(data.startDate), // event start date
-    },
-    end: {
-      dateTime: new Date(data.endDate), // event end date
-    },
+  result.course = await classroom.courses.get({
+    auth: oAuth2Client,
+    id: data.id,
   });
-  return res;
-}
-
-async function ListEvents(data, refresh_token) {
-  return await calendar.events.list({
-    auth: OAuth2Client,
-    calendarId: "primary",
-    maxResults: 5,
+  result.teacher = await classroom.courses.teachers.list({
+    auth: oAuth2Client,
+    courseId: data.id,
   });
+  result.student = await classroom.courses.students.list({
+    auth: oAuth2Client,
+    courseId: data.id,
+  });
+  result.coursework = await classroom.courses.courseWork.list({
+    auth: oAuth2Client,
+    courseId: data.id,
+  });
+  res.send(result);
 }
 
 async function DeleteEvent(data, refresh_token) {
@@ -74,8 +46,5 @@ async function DeleteEvent(data, refresh_token) {
 }
 module.exports = {
   GetRefreshToken,
-  CreateEvent,
-  UpdateEvent,
-  ListEvents,
-  DeleteEvent,
+  ListAll
 };
